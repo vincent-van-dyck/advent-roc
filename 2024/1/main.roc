@@ -4,20 +4,48 @@ import cli.Stdout
 import "input.txt" as input : Str
 
 main! = |_args|
-    result =
+    input_list =
         input
-        |> Str.split_on "\n"
-        |> List.map process_line
-        |> List.walk ([], []) walk_step
+        |> Str.split_on("\n")
+        |> List.map(process_line)
+        |> List.walk(([], []), walk_step)
+
+    total_distance =
+        input_list
         |> sort_numbers
         |> diff_numbers
         |> List.sum
 
-    Stdout.line!(Num.to_str result)
+    _res1 = Stdout.line!("Total distance: ${Num.to_str(total_distance)}")
+
+    similarity_score =
+        input_list
+        |> calculate_similarity_score
+        |> List.sum
+
+    Stdout.line!("Similarity: ${Num.to_str(similarity_score)}")
+
+calculate_similarity_score = |(list1, list2)|
+    List.map2(
+        list1,
+        list2,
+        |num1, _num2|
+            occurences =
+                list2
+                |> List.keep_if(|num| num == num1)
+                |> List.len
+                |> Num.to_u32
+
+            Num.mul(num1, occurences),
+    )
 
 diff_numbers = |(list1, list2)|
-    List.map2 list1 list2 |num1, num2|
-        Num.abs_diff num1 num2
+    List.map2(
+        list1,
+        list2,
+        |num1, num2|
+            Num.abs_diff(num1, num2),
+    )
 
 sort_numbers = |(list1, list2)|
     (List.sort_desc list1, List.sort_desc list2)
@@ -27,6 +55,6 @@ walk_step = |(list1, list2), nums|
 
 process_line = |line|
     line
-    |> Str.split_on "   "
+    |> Str.split_on("   ")
     |> List.map |string|
         Result.with_default(Str.to_u32 string, 0)
